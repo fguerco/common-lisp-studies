@@ -9,27 +9,21 @@
   (cdr (assoc start *graph*)))
 
 (defun starts-with (path item)
-  (eql item (caar path)))
+  (eql item (first path)))
 
 (defun ends-with (path item)
-  (eql item (cadar (last path))))
+  (eql item (first (last path))))
 
-(defun total-cost (path)
-  (reduce (lambda (prev it)
-            (+ prev (cddr it)))
-          path :initial-value 0))
-
-(defun all-paths (start finish)
+(defun all-paths (start finish &optional (cost 0))
   (loop
-     for node in (list-paths start)
-     for next-node = (second node)
-     for path = (if (list-paths next-node)
-                    (cons node (first (all-paths next-node finish)))
-                    (cons node nil))
+     for section in (list-paths start)
+     for next-node = (second section)
+     for path = (if (and (not (eql start finish)) (list-paths next-node))
+                    (cons start (first (all-paths next-node finish (+ cost (cddr section)))))
+                    (cons start cost))
      if (and (starts-with path start) (ends-with path finish))
      collect path))
 
-(defun shortest-path (start finish)
-  (car (sort (all-paths start finish)
-        (lambda (a b)
-          (< (total-cost a) (total-cost b))))))
+(defun dijkstra-shortest-path (start finish)
+  (flet ((path-cost (x) (cdr (last x))))
+    (first (sort (all-paths start finish) #'< :key #'path-cost))))
