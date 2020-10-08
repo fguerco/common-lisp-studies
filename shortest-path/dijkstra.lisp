@@ -8,24 +8,25 @@
 
 (defparameter *unknown* most-positive-word)
 
+(defstruct node
+  (name nil :type symbol)
+  (cost nil :type number)
+  (from nil :type symbol))
+
 (defun create-nodes-table (start)
   (mapcar (lambda (it)
-            (list :node it :cost (if (eq it start) 0 *unknown*) :from nil))
+            (make-node :name it :cost (if (eq it start) 0 *unknown*) :from nil))
           (remove-duplicates
            (mapcan (lambda (it) (list (first it) (second it))) *graph*))))
 
 (defun neighbors (node)
-  (mapcar (lambda (it)
-            (cons (if (eq (first it) node)
-                      (second it)
-                      (first it))
-                  (cddr it)))
-          (remove-if-not (lambda (it) (or (eq (first it) node)
-                                          (eq (second it) node)))
-                         *graph*)))
+  (mapcan (lambda (it)
+            (cond
+              ((eq (first it) node) `((,(second it) . ,(cddr it))))
+              ((eq (second it) node) `((,(first it) . ,(cddr it))))))
+          *graph*))
 
 (defun dijkstra (start finish)
-  (null finish)
   (let ((nodes-table (create-nodes-table start))
         (results nil)
         (node nil)
@@ -34,23 +35,23 @@
        while nodes-table
        do
          (progn
-           (setq nodes-table (stable-sort nodes-table #'< :key #'fourth))
+           (setq nodes-table (stable-sort nodes-table #'< :key #'node-cost))
            (setq node (pop nodes-table))
            (push node results)
 
            (loop
-              with neighbors = (neighbors (getf node :node))
+              with neighbors = (neighbors (node-name node))
               with new-cost = nil
               for neighbor in neighbors
               do
                 (progn
-                  (setq neighbor-node (find (car neighbor) nodes-table :key #'second))
+                  (setq neighbor-node (find (car neighbor) nodes-table :key #'node-name))
                   (when neighbor-node
-                    (setq new-cost (+ (getf node :cost) (cdr neighbor)))
-                    (when (< new-cost (getf neighbor-node :cost))
+                    (setq new-cost (+ (node-cost node) (cdr neighbor)))
+                    (when (< new-cost (node-cost neighbor-node))
                       (progn
-                        (setf (getf neighbor-node :cost) new-cost)
-                        (setf (getf neighbor-node :from) (getf node :node))))))))
+                        (setf (node-cost neighbor-node) new-cost)
+                        (setf (node-from neighbor-node) (node-name node))))))))
        finally (return results))))
 
 (defun shortest-path (start finish)
@@ -58,13 +59,14 @@
         (node finish)
         (path nil))
      (loop
-        for item = (find node results :key #'second)
+        for item = (find node results :key #'node-name)
         do (progn
-             (unless path (setq path (cons node (getf item :cost))))
-             (setq node (getf item :from))
+             (unless path (setq path (cons node (node-cost item))))
+             (setq node (node-from item))
              (when node (setq path (cons node path))))
         while node
         finally (return path))))
 
 (let ((start (read-from-string (second *posix-argv*))) (finish (read-from-string (third *posix-argv*))))
   (format t "~a~%" (shortest-path start finish)))
+
