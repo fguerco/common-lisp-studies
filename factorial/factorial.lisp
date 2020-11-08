@@ -1,0 +1,18 @@
+(defpackage :dev.felipe.lisp-studies.factorial (:use :common-lisp))
+(in-package :dev.felipe.lisp-studies.factorial)
+
+(defun factorial (n)
+  "Simple recursive factorial"
+  (if (= n 1)
+      1
+      (* n (factorial (1- n)))))
+
+
+(factorial 10)
+
+
+(defun ! (n)
+  "Funcional factorial"
+  (reduce #'* (loop for i from 1 to n collect i)))
+
+(! 10)
