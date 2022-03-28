@@ -11,53 +11,5 @@
    (format nil "~a of beer" (say-bottle (1- num)))))
 
 
-(defun bottles (&key
-                  (current 1)
-		  (stop 99)
-		  acc) "return many verses, from current"
-  
-  (if (> current stop)
-      acc
-      (bottles :current (1+ current)
-	       :stop stop
-	       :acc (push (bottle current) acc))))
-
-(defun print-data (list)
-  (format t "~%~{~%~{~a~%~}~}" list))
-
-
-(print-data (bottles))
-
-;; (format t "~{~a~}" '(1 2 3))
-
-
-
-;; `(1 ,@`(2) ,@`(3) 3)
-
-(defun loop-bottles ()
-  (dotimes (b 99)
-    (format t "ola ~d~%" (- 99 b))))
-
-
-(loop-bottles)
-
-
-
-(defmacro run-down (key value data &body body)
-  (let ((local-data (gensym)))
-    `(let ((,local-data ,data))
-       (do while ,local-data
-         (let ((,key (pop ,local-data)) (,value (pop ,local-data)))
-           ,@body)))))
-;;  `(print data))
-
-
-(run-down k v '(a 1 b 2 c 3)
-  (print k)
-  (print v))
-
-
-  let #:G455 params
-    let i #:G455
-
-(run-down '(a 1 b 2 c 3))
+(dotimes (b 99)
+  (format t "~{~a~%~}" (bottle (- 99 b))))

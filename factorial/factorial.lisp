@@ -1,5 +1,3 @@
-(defpackage :dev.felipe.lisp-studies.factorial (:use :common-lisp))
-(in-package :dev.felipe.lisp-studies.factorial)
 
 (defun factorial (n)
   "Simple recursive factorial"
@@ -16,3 +14,13 @@
   (reduce #'* (loop for i from 1 to n collect i)))
 
 (! 10)
+
+(defun factorial-loop (n)
+  "Factorial using loop"
+  (loop for i from 1 to n
+        for f = i then (* f i)
+        maximize f))
+
+(factorial-loop 10)
+
+
