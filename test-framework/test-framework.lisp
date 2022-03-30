@@ -27,7 +27,7 @@
      (let ((*test-name* ',name)
            (*test-depth* (1+ *test-depth*)))
        (format-indented t "~a:~%" *test-name*)
-       ,@body)))
+       (combine-results ,@body))))
 
 
 (deftest test-+ ()
@@ -49,6 +49,3 @@
 
 (deftest test-math ()
   (test-arithmetic))
-
-
-(test-math)
