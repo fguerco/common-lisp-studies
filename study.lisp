@@ -217,3 +217,9 @@
   (if (= x 0)
       y
       (add (1- x) (1+ y))))
+
+
+(defun convert-base (x b)
+  (unless (zerop x)
+    (append (to-base (floor (/ x b)) b)
+            (list (rem x b)))))
