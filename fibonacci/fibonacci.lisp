@@ -1,15 +1,28 @@
-;; exponential
-(defun fib2 (x)
-  (if (< x 2)
-      x
-      (+ (fib2 (1- x)) (fib2 (- x 2)))))
+(defpackage #:fibonacci
+  (:use #:cl))
 
-;; linear
-(defun fib (n &optional (x 0) (y 1))
-  (if (= n 1)
-      y
-      (fib (1- n) y (+ x y))))
+(in-package #:fibonacci)
 
-(loop for i from 1 to 10
-      collect (fib i))
+;; recursive
+(defun fib2 (n)
+  (if (< n 2)
+      n
+      (+ (fib2 (1- n)) (fib2 (- n 2)))))
+
+;; linear - recursion
+(defun fib (n)
+  (labels
+      ((f (n a b)
+         (if (= n 1)
+             b
+             (f (1- n) b (+ a b)))))
+    (f n 0 1)))
+
+;; linear - loop
+(defun fibloop (n)
+  (let ((fib 0) (a 0) (b 1))
+    (dotimes (i n fib)
+      (setq fib (+ a b))
+      (setq b a)
+      (setq a fib))))
 
