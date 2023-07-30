@@ -15,45 +15,47 @@ Programando em BIRL, é verão o ano todo!
 
 (in-package #:birl)
 
-(defmacro hora-do-show (&body forms)
-  `(progn ,@forms))
+(defmacro hora-do-show (&body builder)
+  `(progn ,@builder))
 
 (defun ce-quer-ver-essa-porra? (&rest essa-porra)
   (format t "~{~a~^ ~}~%" essa-porra))
 
-(defmacro que-que-ce-quer-monstrao? ((var prompt) &body forms)
+(defmacro que-que-ce-quer-monstrao? (var &body builder)
   `(progn
-     (princ ,prompt)
+     (princ "que que ce quer monstrao? ")
      (let ((,var (read-line)))
-       ,@forms)))
+       ,@builder)))
 
-(defmacro ele-que-a-gente-quer? (test &body body)
+(defmacro ta-comigo-porra (&body builder)
   `(cond
-     (,test ,(car body))
-     ,@(mapcar #'macroexpand-1 (cdr body))))
+     ,@(mapcar #'macroexpand-1 builder)))
 
-(defmacro que-nao-vai-dar-o-que? (test &body body)
-  (list test `(progn ,@body)))
+(defmacro ele-que-a-gente-quer? (test &body builder)
+  (list test `(progn ,@builder)))
 
-(defmacro nao-vai-dar-nao (&body body)
-  (list t `(progn ,@body)))
+(defmacro que-nao-vai-dar-o-que? (test &body builder)
+  (list test `(progn ,@builder)))
 
-(defmacro oh-o-homi-ai-po (name lambda-list &body body)
+(defmacro nao-vai-dar-nao (&body builder)
+  (list t `(progn ,@builder)))
+
+(defmacro oh-o-homi-ai-po (name lambda-list &body builder)
   `(defun ,name ,lambda-list
-     ,@body))
+     ,@builder))
 
 (defmacro ajuda-o-maluco-ta-doente (func &rest args)
   `(funcall #',func ,@args))
 
 
-(defmacro mais-quero-mais (varlist endlist &body body)
+(defmacro mais-quero-mais (varlist endlist &body builder)
   `(do ,varlist ,endlist
-     ,@body
+     ,@builder
     monstro))
 
-(defmacro negativa-bambam ((var value) loop-condition  &body body)
+(defmacro negativa-bambam ((var value) loop-condition  &body builder)
   `(mais-quero-mais ((,var ,value)) ((not ,loop-condition))
-    ,@body))
+    ,@builder))
         
 
 (defmacro sai-filho-da-puta ()
@@ -70,10 +72,11 @@ Programando em BIRL, é verão o ano todo!
 
 (hora-do-show
   (mais-quero-mais ((m 0 (1+ m))) ((= m 10))
-    (ele-que-a-gente-quer? (= m 7)
-      (sai-filho-da-puta)
-    (que-nao-vai-dar-o-que? (evenp m)
-      (vamo-monstro)))
+    (ta-comigo-porra
+      (ele-que-a-gente-quer? (= m 7)
+        (sai-filho-da-puta))
+      (que-nao-vai-dar-o-que? (evenp m)
+        (vamo-monstro)))
 
     (ce-quer-ver-essa-porra? "essa porra: " m)))
 
@@ -82,20 +85,19 @@ Programando em BIRL, é verão o ano todo!
   (decf x))
 
 (hora-do-show
-  (que-que-ce-quer-monstrao? (x "é 13? ")
+  (que-que-ce-quer-monstrao? x
     (ce-quer-ver-essa-porra? "bambam disse:" x)))
   
   
-(hora-do-show
+(ta-comigo-porra
   (ele-que-a-gente-quer? (> 1 2)
-    (ce-quer-ver-essa-porra? "treze memo carai")
+    (ce-quer-ver-essa-porra? "treze memo carai"))
   (que-nao-vai-dar-o-que? (< 11 2)
     (ce-quer-ver-essa-porra? "quero mais!"))
   (nao-vai-dar-nao
-    (ce-quer-ver-essa-porra? "nao va dar nao"))))
+    (ce-quer-ver-essa-porra? "nao va dar nao")))
 
+(oh-o-homi-ai-po bora! (vai)
+  (ce-quer-ver-essa-porra? vai))
 
-(oh-o-homi-ai-po bora! (a b)
-  (+ a b))
-
-(ajuda-o-maluco-ta-doente bora! 1 2)
+(ajuda-o-maluco-ta-doente bora! "É 37 anos carai!")
