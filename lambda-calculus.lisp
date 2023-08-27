@@ -78,4 +78,17 @@
             (call times lcn (call (call factorial-v0 (call decr lcn))))))))
 
 ;; and next call recursion only with anonymous functions - the Y Combinator!
-
+;; todo move up the recursive function
+(call
+ (call
+  (fn (lcn)
+    (call
+     (fn (rec lcn)
+       (call rec rec lcn))
+     (fn (self lcn)
+       (call if. (call zero? lcn)
+             (fn () one)
+             (fn ()
+               (call times lcn (call (call self self (call decr lcn)))))))
+     lcn))
+  (int->lc 5)))
