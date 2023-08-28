@@ -77,8 +77,8 @@
           (fn ()
             (call times lcn (call (call factorial-v0 (call decr lcn))))))))
 
-;; and next call recursion only with anonymous functions - the Y Combinator!
-;; todo move up the recursive function
+;; and next call recursion only with anonymous functions
+;; this is incomplete - move up the recursive function
 (call
  (call
   (fn (lcn)
@@ -92,3 +92,18 @@
                (call times lcn (call (call self self (call decr lcn)))))))
      lcn))
   (int->lc 5)))
+
+
+;; now full Y combinator
+(call (call (fn (f)
+              (call (fn (x) (call x x))
+                    (fn (x)
+                      (call f (fn (a)
+                                (call (call x x) a))))))
+            (fn (f)
+              (fn (n)
+                (call if. (call zero? n)
+                      (fn () one)
+                      (fn ()
+                        (call times n (call (call f (call decr n)))))))))
+      (int->lc 5))
