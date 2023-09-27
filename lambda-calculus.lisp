@@ -6,104 +6,105 @@
 
 (in-package :lambda-calculus)
 
-(defmacro fn (args &body body)
-  `(lambda ,args ,@body))
-
-(defmacro call (fn &rest args)
-  `(funcall ,fn ,@args))
-
 (defmacro def (name value)
   `(defparameter ,name ,value))
 
 ;; pair
-(def pair (fn (a b) (fn (f) (call f a b))))
-(def car. (fn (f) (call f (fn (a b) (declare (ignore b)) a))))
-(def cdr. (fn (f) (call f (fn (a b) (declare (ignore a)) b))))
+(def pair (lambda (a b) (lambda (f) (funcall f a b))))
+(def car. (lambda (f) (funcall f (lambda (a b) (declare (ignore b)) a))))
+(def cdr. (lambda (f) (funcall f (lambda (a b) (declare (ignore a)) b))))
 
 ;; numbers
-(def zero (fn (f v) (declare (ignore f)) v))
-(def one (fn (f v) (call f (call zero f v))))
-(def two (fn (f v) (call f (call one f v))))
+(def zero (lambda (f v) (declare (ignore f)) v))
+(def one (lambda (f v) (funcall f (funcall zero f v))))
+(def two (lambda (f v) (funcall f (funcall one f v))))
 
 ;; booleans
-(def true (fn (tv fv) (declare (ignore fv)) tv))
-(def false (fn (tv fv) (declare (ignore tv)) fv))
+(def true (lambda (tv fv) (declare (ignore fv)) tv))
+(def false (lambda (tv fv) (declare (ignore tv)) fv))
 
 ;; conversion functions for testing
 (defun lc->int (lc)
-  (call lc #'1+ 0))
+  (funcall lc #'1+ 0))
 
 (defun int->lc (int)
   (cond
     ((zerop int) zero)
-    (t (call incr (int->lc (1- int))))))
+    (t (funcall incr (int->lc (1- int))))))
 
 (defun truep (lc-bool)
-  (call lc-bool t nil))
+  (funcall lc-bool t nil))
 
 (def incr
-    (fn (lc)
-      (fn (f v) (call f (call lc f v)))))
+    (lambda (lc)
+      (lambda (f v) (funcall f (funcall lc f v)))))
 
 (def shift-and-inc
-    (fn (p)
-      (call pair (call cdr. p)
-                 (call incr (call cdr. p)))))
+    (lambda (p)
+      (funcall pair (funcall cdr. p)
+                 (funcall incr (funcall cdr. p)))))
 
 (def decr
-  (fn (lc)
-    (call car.
-          (call lc shift-and-inc (call pair zero zero)))))
+  (lambda (lc)
+    (funcall car.
+          (funcall lc shift-and-inc (funcall pair zero zero)))))
           
 (def times
-    (fn (lc1 lc2)
-      (fn (f v)
-        (call lc2 (fn (x) (call lc1 f x)) v))))
+    (lambda (lc1 lc2)
+      (lambda (f v)
+        (funcall lc2 (lambda (x) (funcall lc1 f x)) v))))
 
 (def if.
-  (fn (bool then else)
-    (call bool then else)))
+  (lambda (bool then else)
+    (funcall bool then else)))
 
 (def zero?
-  (fn (lcn)
-    (call lcn (fn (v) (declare (ignore v)) false)
+  (lambda (lcn)
+    (funcall lcn (lambda (v) (declare (ignore v)) false)
               true)))
 
 ;; now factorial with bound variable for recursion
 (def factorial-v0
-  (fn (lcn)
-    (call if. (call zero? lcn)
-          (fn () one)
-          (fn ()
-            (call times lcn (call (call factorial-v0 (call decr lcn))))))))
+  (lambda (lcn)
+    (funcall if. (funcall zero? lcn)
+          (lambda () one)
+          (lambda ()
+            (funcall times lcn (funcall (funcall factorial-v0 (funcall decr lcn))))))))
 
 ;; and next call recursion only with anonymous functions
 ;; this is incomplete - move up the recursive function
-(call
- (call
-  (fn (lcn)
-    (call
-     (fn (rec lcn)
-       (call rec rec lcn))
-     (fn (self lcn)
-       (call if. (call zero? lcn)
-             (fn () one)
-             (fn ()
-               (call times lcn (call (call self self (call decr lcn)))))))
+(funcall
+ (funcall
+  (lambda (lcn)
+    (funcall
+     (lambda (rec lcn)
+       (funcall rec rec lcn))
+     (lambda (self lcn)
+       (funcall if. (funcall zero? lcn)
+             (lambda () one)
+             (lambda ()
+               (funcall times lcn (funcall (funcall self self (funcall decr lcn)))))))
      lcn))
   (int->lc 5)))
 
 
-;; now full Y combinator
-(call (call (fn (f)
-              (call (fn (x) (call x x))
-                    (fn (x)
-                      (call f (fn (a)
-                                (call (call x x) a))))))
-            (fn (f)
-              (fn (n)
-                (call if. (call zero? n)
-                      (fn () one)
-                      (fn ()
-                        (call times n (call (call f (call decr n)))))))))
-      (int->lc 5))
+;; now full Y combinator (z combinator to be precise)
+(funcall
+ (funcall
+  (lambda (f)
+    (funcall (lambda (x) (funcall x x))
+          (lambda (x)
+            (funcall f (lambda (a)
+                      (funcall (funcall x x) a))))))
+  (lambda (f)
+    (lambda (n)
+      (funcall if. (funcall zero? n)
+            (lambda () one)
+            (lambda ()
+              (funcall times n (funcall (funcall f (funcall decr n)))))))))
+ (int->lc 5))
+
+;; we can check the result calling
+;; (lc->int (funcall <above code>))
+;; this call is needed because this if evaluates parameters so we pass in
+;; lambdas in order to do lazy evaluation
