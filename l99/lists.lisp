@@ -356,3 +356,28 @@
 (defun random-permutation (list)
   "P25 (*) Generate a random permutation of the elements of a list"
   (rnd-select list (length list)))
+
+(defun combine (n list)
+  "P26 (**) Generate the combinations of K distinct objects chosen from the N elements of a list"
+  (labels ((%combine (n list acc)
+             (if (zerop n)
+                 (list (reverse acc))
+                 (loop for (x . xs) on list
+                       nconc (%combine (1- n) xs (cons x acc))))))
+    (%combine n list nil)))
+
+;; I will do P27 later :P
+
+(defun lsort (list)
+  "P28-A (**) Sorting a list of lists according to length of sublists"
+  (sort list #'< :key #'length))
+
+(defun lfsort (list)
+  "P28-B (**) Sorting a list of lists according to length frequency of sublists"
+  (let* ((ht (reduce (lambda (ht x)
+                       (push x (gethash (length x) ht nil))
+                       ht)
+                     list :initial-value (make-hash-table)))
+         (frequencies (loop for v being each hash-value of ht
+                            collect (cons (length v) v))))
+    (mapcan #'cdr (sort frequencies #'< :key #'car))))
