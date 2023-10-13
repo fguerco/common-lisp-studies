@@ -372,8 +372,8 @@
   (flet ((fact (n) (loop for x from 1 to n
                          for y = 1 then (* x y)
                          finally (return y))))
-    (let* ((n (fact total))
-           (ns (reduce #'* (mapcar #'fact combination))))
+    (let ((n (fact total))
+          (ns (reduce #'* (mapcar #'fact combination))))
       (/ n ns))))
 
 (defun multicombine (list ns)
