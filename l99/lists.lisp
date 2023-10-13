@@ -95,7 +95,7 @@
 (defun compress/loop (list)
   "P08 loop version"
   (loop for x in list
-    and p = nil then x
+    and p = x
     unless (eql x p) collect x))
     
 (defun pack (list)
@@ -180,6 +180,10 @@
   "P12 loop version"
   (loop
     for x in list nconc (unpack x)))
+
+(defun decode/map (list)
+  "P12 using mapcan"
+  (mapcan #'unpack list))
 
   
 (defun encode-direct (list)
