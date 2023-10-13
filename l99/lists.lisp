@@ -2,6 +2,8 @@
   (:use #:cl))
 
 (in-package #:l99)
+
+(load "utils.lisp")
             
 ;; https://www.ic.unicamp.br/~meidanis/courses/mc336/problemas-lisp/L-99_Ninety-Nine_Lisp_Problems.html
 ;; Working with lists
@@ -358,15 +360,31 @@
   (rnd-select list (length list)))
 
 (defun combine (n list)
-  "P26 (**) Generate the combinations of K distinct objects chosen from the N elements of a list"
-  (labels ((%combine (n list acc)
-             (if (zerop n)
-                 (list (reverse acc))
-                 (loop for (x . xs) on list
-                       nconc (%combine (1- n) xs (cons x acc))))))
-    (%combine n list nil)))
+  "P26 (**) Generate the combinations of K distinct objects chosen from the N
+ elements of a list"
+  (nlet %combine ((n n) (list list) (acc nil))
+    (if (zerop n)
+        (list (reverse acc))
+        (loop for (x . xs) on list
+              nconc (%combine (1- n) xs (cons x acc))))))
 
-;; I will do P27 later :P
+(defun multinomial-coefficient (total &rest combination)
+  (flet ((fact (n) (loop for x from 1 to n
+                         for y = 1 then (* x y)
+                         finally (return y))))
+    (let* ((n (fact total))
+           (ns (reduce #'* (mapcar #'fact combination))))
+      (/ n ns))))
+
+(defun multicombine (list ns)
+  "P27 (**) Group the elements of a set into disjoint subsets"
+  (nlet recur ((list list) (ns ns) (acc nil))
+    (if (endp (cdr ns))
+        (loop for x in (combine (car ns) list)
+              collect (reverse (cons x acc)))
+        (loop for x in (combine (car ns) list)
+              for l2 = (remove-if (lambda (y) (member y x)) list)
+              nconc (recur l2 (cdr ns) (cons x acc))))))
 
 (defun lsort (list)
   "P28-A (**) Sorting a list of lists according to length of sublists"

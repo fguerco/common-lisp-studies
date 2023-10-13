@@ -1,0 +1,5 @@
+(defmacro nlet (name bindings &body body)
+  (let ((params (mapcar #'car bindings))
+        (values (mapcar #'cadr bindings)))
+    `(labels ((,name ,params ,@body))
+       (,name ,@values))))
