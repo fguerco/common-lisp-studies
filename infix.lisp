@@ -34,14 +34,14 @@
     (to-expr '(+ -))))
 
 (defun invert-signals (expr)
-  (labels ((inv (expr)
-             (if (atom expr)
-                 expr
-                 (destructuring-bind (a &optional b . r) expr
-                   (if (eql a :invert)
-                       (cons `(-1 * ,(inv b)) (inv r))
-                       (cons (inv a) (inv (cdr expr))))))))
-    (pop-single (inv expr))))
+  (pop-single
+   (nlet inv ((expr expr))
+     (if (atom expr)
+         expr
+         (destructuring-bind (a &optional b . r) expr
+           (if (eql a :invert)
+               (cons `(-1 * ,(inv b)) (inv r))
+               (cons (inv a) (inv (cdr expr)))))))))
 
 (defun parse-number (st)
   (read-from-string
