@@ -30,6 +30,7 @@
 
 (defun compose (tokenized)
   (->> tokenized
+    pop-single
     (to-expr '(* /))
     (to-expr '(+ -))))
 
@@ -82,12 +83,13 @@
       finally (consume))))
 
 (defun infix (expr)
-  (with-input-from-string (st expr)
-    (-> st
-      tokenize
-      invert-signals
-      compose
-      evaluate)))
+  (let ((*read-default-float-format* 'double-float))
+    (with-input-from-string (st expr)
+      (-> st
+        tokenize
+        invert-signals
+        compose
+        evaluate))))
 
 ;;;; tests
 
@@ -125,7 +127,13 @@
     ("(-5 + 2)" -3)
     ("-(-5 + 2)" 3)
     ("(3 + 2)" 5)
-    ("(3 + 5) * 10" 80)))
+    ("(3 + 5) * 10" 80)
+    ("(123.45*(678.90 / (-2.5+ 11.5)-(((80 -(19))) *33.25)) / 20)"
+     -12053.760875d0)
+    ("-(123.45*(678.90 / (-2.5+ 11.5)-(((80 -(19))) *33.25)) / 20)"
+     12053.760875d0)
+    ("(123.45*(678.90 / (-2.5+ 11.5)-(((80 -(19))) *33.25)))"
+     -241075.2175d0)))
 
 (defmacro make-assertions ()
   `(progn
