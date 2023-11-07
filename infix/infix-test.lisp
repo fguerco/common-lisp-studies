@@ -3,6 +3,7 @@
 (ql:quickload "parachute")
 
 (in-package :infix)
+(use-package :parachute)
 
 ;;;; tests
 

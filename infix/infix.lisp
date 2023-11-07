@@ -1,10 +1,8 @@
 (ql:quickload "fg-utils")
 
 (defpackage :infix
-  (:use :cl :parachute)
   (:import-from :fg
-                #:nlet #:singlep #:pop-single #:-> #:->> #:as->
-                #:join-to-symbol))
+                #:nlet #:pop-single #:-> #:->> #:as-> #:join-to-symbol))
 
 (in-package :infix)
 
