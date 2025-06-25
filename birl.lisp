@@ -89,13 +89,14 @@ Programando em BIRL, é verão o ano todo!
     (ce-quer-ver-essa-porra? "bambam disse:" x)))
   
   
-(ta-comigo-porra
-  (ele-que-a-gente-quer? (> 1 2)
-    (ce-quer-ver-essa-porra? "treze memo carai"))
-  (que-nao-vai-dar-o-que? (< 11 2)
-    (ce-quer-ver-essa-porra? "quero mais!"))
-  (nao-vai-dar-nao
-    (ce-quer-ver-essa-porra? "nao va dar nao")))
+(que-que-ce-quer-monstrao? x
+  (ta-comigo-porra
+    (ele-que-a-gente-quer? (equalp x "13")
+      (ce-quer-ver-essa-porra? "treze memo carai"))
+    (que-nao-vai-dar-o-que? (equalp x "11")
+      (ce-quer-ver-essa-porra? "quero mais!"))
+    (nao-vai-dar-nao
+      (ce-quer-ver-essa-porra? "nao va dar nao"))))
 
 (oh-o-homi-ai-po bora! (vai)
   (ce-quer-ver-essa-porra? vai))
