@@ -1,4 +1,4 @@
-(ql:quickload "green-threads")
+(ql:quickload '("green-threads" "cl-tui"))
 
 ;; cl-tui: https://40ants.com/lisp-project-of-the-day/2020/07/0118-cl-tui.html
 
@@ -10,12 +10,13 @@
 
 (in-package :fg-snake)
 
-(defparameter *size-x* 20)
-(defparameter *size-y* 20)
+(defparameter *size-x* 10)
+(defparameter *size-y* 10)
 
 
 ;; snake example
 (defparameter *snake* nil)
+(defparameter *food* nil)
 
 
 (define-symbol-macro head (car *snake*))
@@ -32,10 +33,20 @@
     (:east 1 . 0)
     (:west -1 . 0)))
 
-(defun reset ()
+(defun generate-place ()
   (let ((x (random *size-x*))
         (y (random *size-y*)))
-    (setf *snake* (list (cons x y)))))
+    (cons x y)))
+
+
+(defun spawn-food ()
+  (loop for food = (generate-place)
+        while (find food *snake* :test #'equalp)
+        finally (return (setf *food* food))))
+
+(defun reset ()
+  (setf *snake* (list (generate-place)))
+  (spawn-food))
 
 
 (defun copy-head ()
@@ -47,25 +58,33 @@
 
 
 (defun move-head (x y)
-  (incf (car head) x)
-  (incf (cdr head) y))
+  (setf (car head) x)
+  (setf (cdr head) y))
 
 
 (defun tail-to-head ()
   (setf *snake* (cons (copy-head) (butlast *snake*))))
 
 
-(defun move (direction &key (grow nil))
+(defun next-position (direction)
   (destructuring-bind (x . y) (direction-data direction)
+    (cons (+ (car head) x)
+          (+ (cdr head) y))))
+
+
+(defun move (direction)
+  (let* ((next (next-position direction))
+         (x (car next))
+         (y (cdr next))
+         (grow (equalp next *food*)))
     (if grow
-        (push (copy-head) *snake*)
+        (push next *snake*)
         (when neck (tail-to-head)))
-    (move-head x y))
+    (move-head x y)
+  (when grow (spawn-food)))
   *snake*)
 
 
-(defun grow (direction) (move direction :grow t))
-  
 
 (defun snake-collision-p (x y)
   (let ((new-head (cons (+ (car head) x)
@@ -81,23 +100,45 @@
              (and at-south-edge (= y 1))
              (snake-collision-p x y)))))
 
+(defun on-direction-chosen (direction)
+   (move direction)
+  (draw-board))
+
 
 (defun draw-board ()
+  (terpri)
   (let ((board (make-array (list *size-x* *size-y*) :initial-element #\.)))
     (loop for (x . y) in *snake*
           and h = t then nil
           do (setf (aref board x y) (if h #\H #\S)))
+    (when *food*
+      (destructuring-bind (fx . fy) *food*
+        (setf (aref board fx fy) #\F)))
     (loop for y below *size-y*
           do (loop for x below *size-x*
                    do (princ (aref board x y))
                    finally (terpri)))))
 
 
-(defun get-input ())
+(defun get-input ()
+  (format t "Enter direction: ")
+  (case (elt (read-line) 0)
+    ((#\n #\8) :north)
+    ((#\s #\2) :south)
+    ((#\e #\6) :east)
+    ((#\w #\4) :west)))
+    
 
 (defun main ()
+  (reset)
+  (draw-board)
   (loop
+    for i from 1
     for input = (get-input)
-    for board = (draw-board)
-    do )
-          
+    do (format t "input: ~a~%" input)
+    if input
+      do (on-direction-chosen input)
+    else
+      do (return)))
+     
+(main)
