@@ -1,18 +1,25 @@
-(ql:quickload '("green-threads" "cl-tui"))
+(ql:quickload '("bordeaux-threads" "cl-tui") :silent t)
 
 ;; cl-tui: https://40ants.com/lisp-project-of-the-day/2020/07/0118-cl-tui.html
 
 ;; TODO create state to avoid rendering the entire board every time
-;; TODO create separate threads for gameloop and user input collection
 
 (defpackage :fg-snake
-  (:use :cl))
+  (:use :cl)
+  (:use :cl-tui)
+  (:use :bt2))
 
 (in-package :fg-snake)
 
 (defparameter *size-x* 10)
 (defparameter *size-y* 10)
 
+(defparameter *tick* 1.0)
+(defparameter *difficulty* 0.85)
+
+(defparameter *board* nil)
+
+(defparameter *direction* nil)
 
 ;; snake example
 (defparameter *snake* nil)
@@ -44,10 +51,9 @@
         while (find food *snake* :test #'equalp)
         finally (return (setf *food* food))))
 
-(defun reset ()
-  (setf *snake* (list (generate-place)))
-  (spawn-food))
-
+(defun increase-speed ()
+  (when (zerop (mod (length *snake*) 5))
+    (setf *tick* (* *tick* 0.85))))
 
 (defun copy-head ()
   (copy-list head))
@@ -81,7 +87,9 @@
         (push next *snake*)
         (when neck (tail-to-head)))
     (move-head x y)
-  (when grow (spawn-food)))
+    (when grow
+      (spawn-food)
+      (increase-speed)))
   *snake*)
 
 
@@ -92,7 +100,7 @@
     (find new-head *snake* :test #'equalp)))
 
 
-(defun can-move-p (direction)
+(defun valid-move-p (direction)
   (destructuring-bind (x . y) (direction-data direction)
     (not (or (and at-east-edge (= x 1))
              (and at-west-edge (= x -1))
@@ -100,45 +108,97 @@
              (and at-south-edge (= y 1))
              (snake-collision-p x y)))))
 
-(defun on-direction-chosen (direction)
-   (move direction)
-  (draw-board))
+(defun random-item (seq)
+  (elt seq (random (length seq))))
+
+(defun pick-direction ()
+  (loop for dir = (car (random-item *moves*))
+        until (valid-move-p dir)
+        finally (return dir)))
 
 
-(defun draw-board ()
-  (terpri)
+(defun reset ()
+  (setf *snake* (list (generate-place)))
+  (setf *direction* (pick-direction))
+  (spawn-food))
+
+
+(defun draw-board (&key frame)
   (let ((board (make-array (list *size-x* *size-y*) :initial-element #\.)))
     (loop for (x . y) in *snake*
           and h = t then nil
           do (setf (aref board x y) (if h #\H #\S)))
-    (when *food*
-      (destructuring-bind (fx . fy) *food*
-        (setf (aref board fx fy) #\F)))
+    (destructuring-bind (fx . fy) *food*
+      (setf (aref board fx fy) #\F))
     (loop for y below *size-y*
           do (loop for x below *size-x*
-                   do (princ (aref board x y))
-                   finally (terpri)))))
+                   do (put-char frame y x (aref board x y))))))
+
+
+(defun on-direction-chosen (direction)
+  (auto-walk :stop t)
+  (setf *direction* direction)
+  (refresh)
+  (auto-walk))
 
 
 (defun get-input ()
-  (format t "Enter direction: ")
-  (case (elt (read-line) 0)
-    ((#\n #\8) :north)
-    ((#\s #\2) :south)
-    ((#\e #\6) :east)
-    ((#\w #\4) :west)))
-    
+  (let ((key (read-key)))
+    (case key
+      ((:key-up #\w #\8) :north)
+      ((:key-down #\s #\2) :south)
+      ((:key-right #\d #\6) :east)
+      ((:key-left #\a #\4) :west))))
+
+
+;; thread 1: auto run
+(let (thread)
+  (defun auto-walk (&key stop)
+    (when (and (threadp thread) (thread-alive-p thread))
+      (destroy-thread thread)
+      (setf thread nil))
+    (unless stop
+      (setf thread
+            (make-thread
+             (lambda ()
+               (loop
+                 (move *direction*)
+                 (refresh)
+                 (sleep *tick*))))))))
+
+
+;; thread 2: read key
+(let (thread)
+  (defun collect-iput ()
+    (setf thread
+          (make-thread
+           (lambda ()
+             (loop
+               for input = (get-input)
+               do (case input
+                    (:quit (return))
+                    (:refresh (reset))
+                    ((:north :south :east :west) (on-direction-chosen input)))))))))
+
+
+
+(defun game-over ()
+  (auto-walk :stop t))
+
+(define-frame callback (simple-frame :render 'draw-board) :on :root)
 
 (defun main ()
   (reset)
-  (draw-board)
-  (loop
-    for i from 1
-    for input = (get-input)
-    do (format t "input: ~a~%" input)
-    if input
-      do (on-direction-chosen input)
-    else
-      do (return)))
+  (with-screen ()
+    (refresh)
+    (collect-iput)
+    (auto-walk)
+    (loop)))
+      
+    ;;  for input = (get-input)
+    ;;  do (case input
+    ;;       (:quit (return))
+    ;;       (:refresh (reset))
+    ;;       ((:north :south :east :west) (on-direction-chosen input))))))
      
 (main)
